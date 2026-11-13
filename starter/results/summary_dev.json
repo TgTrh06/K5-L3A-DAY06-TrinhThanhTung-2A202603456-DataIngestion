@@ -1,0 +1,50 @@
+{
+  "split": "dev",
+  "metrics": {
+    "A": {
+      "dev": {
+        "question_count": 15,
+        "hit_at_1": {
+          "hits": 5,
+          "total": 15,
+          "rate": 0.3333333333333333
+        },
+        "evidence_hit_at_3": {
+          "hits": 8,
+          "total": 15,
+          "rate": 0.5333333333333333
+        }
+      }
+    },
+    "B": {
+      "dev": {
+        "question_count": 15,
+        "hit_at_1": {
+          "hits": 10,
+          "total": 15,
+          "rate": 0.6666666666666666
+        },
+        "evidence_hit_at_3": {
+          "hits": 11,
+          "total": 15,
+          "rate": 0.7333333333333333
+        }
+      }
+    },
+    "C": {
+      "dev": {
+        "question_count": 15,
+        "hit_at_1": {
+          "hits": 10,
+          "total": 15,
+          "rate": 0.6666666666666666
+        },
+        "evidence_hit_at_3": {
+          "hits": 11,
+          "total": 15,
+          "rate": 0.7333333333333333
+        }
+      }
+    }
+  }
+}

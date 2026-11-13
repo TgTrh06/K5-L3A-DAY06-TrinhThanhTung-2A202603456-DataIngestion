@@ -1,0 +1,64 @@
+{
+  "run_at_utc": "2026-11-13T18:10:48.212627+00:00",
+  "split": "dev",
+  "corpus_file": "data\\corpus_pages.jsonl",
+  "benchmark_file": "benchmark\\questions.jsonl",
+  "corpus_pages": 56,
+  "question_count": 15,
+  "strategies": [
+    "A",
+    "B",
+    "C"
+  ],
+  "embedding_provider": "Sentence Transformers (local)",
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "embedding_dimensions": 384,
+  "embedding_vectors_normalized": true,
+  "vector_store": "PostgreSQL + pgvector",
+  "distance_metric": "cosine",
+  "search_mode": "exact (no approximate vector index created)",
+  "chunking": {
+    "A": {
+      "method": "fixed_size",
+      "size_chars": 500,
+      "overlap_chars": 50
+    },
+    "B": {
+      "method": "heading_aware",
+      "max_size_chars": 500
+    },
+    "C": {
+      "method": "same chunks/index as B",
+      "filter": "chapter only when provided by question"
+    }
+  },
+  "cost": 0,
+  "index_metrics": {
+    "A": {
+      "chunk_count": 403,
+      "chunk_length_min": 65,
+      "chunk_length_mean": 469.22084367245657,
+      "chunk_length_max": 500,
+      "embedding_seconds": 6.147684100000333,
+      "store_seconds": 0.27049930000066524
+    },
+    "B": {
+      "chunk_count": 434,
+      "chunk_length_min": 30,
+      "chunk_length_mean": 394.9585253456221,
+      "chunk_length_max": 500,
+      "embedding_seconds": 5.386468599999716,
+      "store_seconds": 0.2506821000006312
+    }
+  },
+  "retrieval_seconds_by_strategy": {
+    "A": 0.39201669999965816,
+    "B": 0.34268950000114273,
+    "C": 0.36670339999182033
+  },
+  "outputs": {
+    "traces": "results\\traces_dev.jsonl",
+    "summary": "results\\summary_dev.json",
+    "metadata": "results\\run_metadata_dev.json"
+  }
+}

@@ -1,6 +1,6 @@
 # Starter · PostgreSQL + pgvector
 
-Bộ khởi động **tùy chọn** cho lab cá nhân. Docker Compose tạo PostgreSQL + pgvector local; các file trong `src/` là **khung pseudocode có TODO**, chưa đọc tài liệu, tạo embedding, lưu vector hay chạy benchmark. Bạn cần tự hiện thực. Vẫn có thể chọn Qdrant, Chroma hoặc vector store tương đương theo [GUIDE.md](../GUIDE.md).
+Bộ khởi động **tùy chọn** cho lab cá nhân. Docker Compose tạo PostgreSQL + pgvector local. Pipeline hiện có script trích xuất PDF, hai chiến lược chunking, embedding local bằng Sentence Transformers, lưu/truy xuất vector và chạy benchmark retrieval. Vẫn có thể chọn Qdrant, Chroma hoặc vector store tương đương theo [GUIDE.md](../GUIDE.md).
 
 ## Cấu trúc
 
@@ -8,17 +8,18 @@ Bộ khởi động **tùy chọn** cho lab cá nhân. Docker Compose tạo Post
 starter/
 ├── docker-compose.yml     # PostgreSQL 16 + pgvector, chỉ mở cổng local
 ├── init.sql               # bật extension khi tạo database mới
-├── requirements.txt       # psycopg, pypdf và python-dotenv
+├── requirements.txt       # psycopg, pypdf, python-dotenv, sentence-transformers
 ├── .env.example           # cấu hình mẫu; copy thành .env
 ├── scripts/check_setup.py # kiểm tra kết nối và extension (đã chạy được)
 ├── src/
 │   ├── models.py          # cấu trúc dữ liệu mẫu
-│   ├── ingestion.py       # TODO: đọc / chuẩn hóa tài liệu
-│   ├── chunking.py        # TODO: chia chunk
-│   ├── embeddings.py      # TODO: chọn model API hoặc local
-│   ├── store.py           # TODO: lưu vector, metadata và filter
-│   ├── evaluation.py      # TODO: chấm truy xuất, lưu trace
-│   └── run.py             # TODO: kết nối các bước thành pipeline
+│   ├── chunking.py        # fixed-size A và heading-aware B
+│   ├── embeddings.py      # embedding model local
+│   ├── store.py           # PostgreSQL + pgvector, cosine search, chapter filter
+│   ├── evaluation.py      # Hit@1, Evidence Hit@3 và trace
+│   └── run.py             # dựng index và chạy benchmark
+├── scripts/extract_corpus.py # trích các trang PDF đã chọn thành JSONL
+├── benchmark/questions.jsonl # câu hỏi, split và gold evidence
 ├── data/                  # bạn tự chuẩn bị corpus được phép sử dụng
 └── results/               # lưu kết quả của bạn
 ```
@@ -50,16 +51,28 @@ Dừng container nhưng giữ dữ liệu:
 docker compose -p day6_student_starter stop
 ```
 
-## 2. Chọn embedding model
+## 2. Embedding model
 
-Điền key tương ứng trong `.env` nếu dùng OpenRouter, OpenAI hoặc Gemini; **không commit `.env`**. Model local không cần API key. `requirements.txt` chỉ có dependencies cơ bản: tự cài SDK hoặc thư viện local phù hợp với model bạn chọn và ghi lại version/lệnh cài trong báo cáo. Ghi tên model và số chiều; dùng cùng model cho toàn bộ chiến lược và vector query tương thích vector document.
+Mặc định dùng `sentence-transformers/all-MiniLM-L6-v2` chạy local, vector 384 chiều và không cần API key. Có thể chọn model khác tương thích Sentence Transformers qua `EMBEDDING_MODEL` trong `.env`; dùng cùng model cho mọi chiến lược và ghi tên, phiên bản, số chiều trong báo cáo. Không commit `.env`.
 
 ## 3. Hoàn thiện pipeline
 
 1. Đặt corpus vào `data/` hoặc cung cấp manifest/hướng dẫn truy cập. Đọc [GUIDE.md](../GUIDE.md) về **30 trang nội dung**, quyền dữ liệu và metadata.
 2. Hoàn thiện từng hàm TODO trong `src/`. Lưu ID tài liệu, nguồn, trang/vị trí và ít nhất một trường filter có ích.
-3. Xây ít nhất ba cấu hình; ví dụ A fixed-size, B theo đoạn, C như B nhưng có filter. Cần cùng corpus, model và benchmark; nạp lại không nhân đôi và xử lý chunk cũ khi dữ liệu đổi.
-4. Tự viết ít nhất 20 câu hỏi kèm evidence, tách dev/test trước khi thử theo [BENCHMARK.md](../BENCHMARK.md). Lưu trace top-3 và báo cáo đủ năm tiêu chí.
-5. Sau khi hoàn thiện, chạy `python -m src.run` từ thư mục `starter/`. Trước khi làm TODO, lệnh này **chủ động báo `NotImplementedError`**.
+3. Cấu hình A dùng fixed-size, B dùng heading-aware; C truy vấn đúng index B nhưng chỉ thêm filter chương khi câu hỏi cung cấp filter. Ba cấu hình giữ nguyên corpus, model và benchmark.
+4. Bộ câu hỏi nằm ở `benchmark/questions.jsonl`; có 20 câu kèm evidence và split dev/test. Kiểm tra evidence trước khi chạy theo [BENCHMARK.md](../BENCHMARK.md).
+5. Chạy pipeline từ thư mục `starter/`. Mặc định chỉ chạy dev để giữ test độc lập:
 
-Lưu code, cấu hình, kết quả và lệnh chạy để người chấm tái lập; không commit key, dữ liệu mật hoặc dữ liệu không có quyền chia sẻ.
+   ```bash
+   python -m src.run
+   ```
+
+   Sau khi đã chọn và cố định cấu hình bằng dev, chạy test một lần riêng:
+
+   ```bash
+   python -m src.run --split test
+   ```
+
+   Trace JSONL, summary metric và metadata lượt chạy được ghi vào `results/`. Dùng `--split all` chỉ khi muốn chạy cả hai split trong cùng lượt và ghi rõ việc đó trong báo cáo.
+
+Script trích xuất corpus đã chọn mặc định nằm ở `../data/introduction-sociology-3e_-_WEB.pdf`; chạy lại bằng `python scripts/extract_corpus.py`. Lưu code, cấu hình, kết quả và lệnh chạy để người chấm tái lập; không commit key, dữ liệu mật hoặc dữ liệu không có quyền chia sẻ.
