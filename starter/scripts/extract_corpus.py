@@ -11,12 +11,16 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
-import unicodedata
 from pathlib import Path
 
-from pypdf import PdfReader
+SCRIPT_DIR = Path(__file__).resolve().parent
+STARTER_DIR = SCRIPT_DIR.parent
+PROJECT_DIR = STARTER_DIR.parent
+if str(STARTER_DIR) not in sys.path:
+    sys.path.insert(0, str(STARTER_DIR))
+
+from src.ingestion import load_pdf
 
 
 SOURCE_ID = "openstax-sociology-3e"
@@ -32,41 +36,26 @@ CHAPTER_RANGES = {
     7: (181, 200),
 }
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-STARTER_DIR = SCRIPT_DIR.parent
-PROJECT_DIR = STARTER_DIR.parent
 DEFAULT_PDF = PROJECT_DIR / "data" / "introduction-sociology-3e_-_WEB.pdf"
 DEFAULT_OUTPUT = STARTER_DIR / "data" / "corpus_pages.jsonl"
 
 
-def normalize_text(text: str) -> str:
-    """Normalize Unicode and collapse extraction whitespace while retaining words."""
-    text = unicodedata.normalize("NFC", text)
-    return re.sub(r"\s+", " ", text).strip()
-
-
-def normalize_layout_text(text: str) -> str:
-    """Normalize PDF line endings and line edges without removing line breaks."""
-    text = unicodedata.normalize("NFC", text).replace("\r\n", "\n").replace("\r", "\n")
-    return "\n".join(line.strip() for line in text.split("\n")).strip()
-
-
 def extract_records(pdf_path: Path, min_chars: int) -> tuple[list[dict], list[int]]:
-    reader = PdfReader(str(pdf_path))
+    pages = load_pdf(pdf_path, SOURCE_ID, TITLE)
     records: list[dict] = []
     skipped_pages: list[int] = []
 
     largest_page = max(end for _, end in CHAPTER_RANGES.values())
-    if len(reader.pages) < largest_page:
+    if len(pages) < largest_page:
         raise ValueError(
-            f"PDF has {len(reader.pages)} pages; selected ranges require page {largest_page}."
+            f"PDF has {len(pages)} pages; selected ranges require page {largest_page}."
         )
 
     for chapter, (start, end) in CHAPTER_RANGES.items():
         for page_number in range(start, end + 1):
-            extracted = reader.pages[page_number - 1].extract_text() or ""
-            layout_text = normalize_layout_text(extracted)
-            text = normalize_text(extracted)
+            page = pages[page_number - 1]
+            text = page.text
+            layout_text = str(page.metadata["layout_text"])
             if len(text) < min_chars:
                 skipped_pages.append(page_number)
                 continue

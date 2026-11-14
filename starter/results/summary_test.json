@@ -1,0 +1,50 @@
+{
+  "split": "test",
+  "metrics": {
+    "A": {
+      "test": {
+        "question_count": 5,
+        "hit_at_1": {
+          "hits": 5,
+          "total": 5,
+          "rate": 1.0
+        },
+        "evidence_hit_at_3": {
+          "hits": 5,
+          "total": 5,
+          "rate": 1.0
+        }
+      }
+    },
+    "B": {
+      "test": {
+        "question_count": 5,
+        "hit_at_1": {
+          "hits": 5,
+          "total": 5,
+          "rate": 1.0
+        },
+        "evidence_hit_at_3": {
+          "hits": 5,
+          "total": 5,
+          "rate": 1.0
+        }
+      }
+    },
+    "C": {
+      "test": {
+        "question_count": 5,
+        "hit_at_1": {
+          "hits": 5,
+          "total": 5,
+          "rate": 1.0
+        },
+        "evidence_hit_at_3": {
+          "hits": 5,
+          "total": 5,
+          "rate": 1.0
+        }
+      }
+    }
+  }
+}
