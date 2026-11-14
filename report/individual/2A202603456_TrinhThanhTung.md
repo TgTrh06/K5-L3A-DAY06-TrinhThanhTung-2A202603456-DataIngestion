@@ -43,10 +43,13 @@ Nhãn audit: 90 hàng trong `starter/results/manual_audit.csv` (15 grounding + 4
 
 Coherence: 10 vị trí trang × 3 chiến lược = 30 nhãn. Điểm phân bố A: 0×4, 1×5, 2×1; B/C: 0×4, 1×4, 2×2. Các trang điểm 0 (132, 138, 143, 166) là các trang bắt đầu bằng continuation fragment từ trang trước.
 
+Metadata — tính hữu dụng: field `chapter` cho phép C lọc kết quả theo đúng chương mà câu hỏi chỉ định trước khi truy xuất, giúp loại các chunk cùng chủ đề nhưng thuộc chương khác (ví dụ: câu về bureaucracy của chương 6 không nhận chunk về deviance của chương 7). Hạn chế: `chapter` chỉ có 3 giá trị phân biệt trong corpus này; không lọc được ở mức section nhỏ hơn trong cùng chương; giá trị filter phải do câu hỏi cung cấp trước, không tự suy từ query.
+
 ## Phân tích và kết luận
 
-- A–B: trên dev, B tăng Hit@1 từ 5/15 lên 10/15 và Evidence Hit@3 từ 8/15 lên 11/15. Trên test, cả hai đều 5/5; test nhỏ không phân biệt được cấu hình.
-- B–C: metric tổng trùng nhau trên dev/test. Filter có ích để giới hạn phạm vi câu hỏi có chapter, nhưng hai câu test có filter không tạo khác biệt điểm so với B. Không suy rộng kết quả này ra corpus khác.
+- A–B: trên dev, B tăng Hit@1 từ 5/15 lên 10/15 và Evidence Hit@3 từ 8/15 lên 11/15. Trên test, cả hai đều 5/5; test nhỏ không phân biệt được cấu hình. Cơ chế: fixed-size cắt theo số ký tự cố định nên evidence quote thường bị chia đôi giữa hai chunk liền nhau — ví dụ q06, A trả về chunk `fixed-0002` chứa evidence nhưng bị ghép với nội dung từ đoạn trước trong cùng trang; B trả về chunk `heading-0002` giữ nguyên đoạn "Denmark gap year" thành một unit hoàn chỉnh nên score cosine cao hơn và hit rank 1. Heading-aware giữ ranh giới ngữ nghĩa tự nhiên của đoạn/section, giúp evidence ít bị cắt đôi hơn so với cửa sổ ký tự cố định.
+- B–C: metric tổng trùng nhau trên dev/test. Filter có ích để giới hạn phạm vi câu hỏi có chapter, nhưng hai câu test có filter không tạo khác biệt điểm so với B vì B đã trả đúng chunk trong chương đó ở rank 1. Không suy rộng kết quả này ra corpus khác.
 - Ví dụ lỗi dev: q16 hỏi các yếu tố ảnh hưởng việc một hành động bị gắn nhãn deviant; top-3 B không lấy đủ gold evidence ở trang 183. q18 hỏi khác biệt crime/deviance; top-3 B không lấy gold định nghĩa ở trang 194. Đây là lỗi evidence retrieval, dù có thể có chunk chủ đề gần đó.
 - Kết quả test 5/5 cho mỗi chiến lược chỉ áp dụng cho 5 câu đã chọn; không chứng minh độ chính xác tổng quát. Cách chia theo heading dựa vào layout PDF và có thể chưa khôi phục chính xác mọi đoạn.
 - Hạn chế: corpus chỉ là ba chương của một sách tiếng Anh; mẫu test nhỏ; coherence lấy opening passage tại 10 trang đã chọn, không đại diện cho toàn corpus.
+- Nếu làm lại hoặc mở rộng: (1) thử chunking cross-page để xử lý continuation fragment — 4 trang điểm coherence 0 đều bắt đầu giữa chừng một câu từ trang trước, ranh giới trang cứng là nguyên nhân chính; (2) mở rộng benchmark sang các chương khác để kiểm tra generalization, tránh kết quả test 5/5 bị ảnh hưởng bởi câu hỏi dễ; (3) thêm metadata `section` ở cấp nhỏ hơn chapter (ví dụ theo heading cấp 2) để C có thể filter chính xác hơn với corpus lớn hơn.
